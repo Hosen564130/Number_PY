@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-🤖 𝐇𝐑𝐌 𝐓𝐄𝐀𝐌𝐒 - 𝐒𝐌𝐒 𝐁𝐎𝐓 (নম্বর ফিক্সড)
+🤖 𝐇𝐑𝐌 𝐓𝐄𝐀𝐌𝐒 - 𝐒𝐌𝐒 𝐁𝐎𝐓 (Render Free Web Service এর জন্য)
 গ্রুপ জয়েন চেক + নম্বর চেঞ্জ + OTP বট ও চ্যানেলে
 """
 
@@ -11,31 +11,46 @@ import openpyxl
 import threading
 from datetime import datetime
 from typing import Dict, Optional, List
-from flask import Flask, jsonify
+from http.server import HTTPServer, BaseHTTPRequestHandler
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application, CommandHandler, MessageHandler, CallbackQueryHandler,
     filters, ContextTypes
 )
 
-# ========== ফ্লাস্ক HTTP সার্ভার (Render এর জন্য) ==========
-flask_app = Flask(__name__)
+# ========== Render এর জন্য ডামি HTTP সার্ভার (পোর্ট বাইন্ডিং এর জন্য) ==========
+class DummyHandler(BaseHTTPRequestHandler):
+    """শুধু Render কে দেখানোর জন্য যে পোর্ট 8080 ওপেন আছে"""
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
+        self.wfile.write(b"""
+        <html>
+        <head><title>HRM TEAMS SMS BOT</title></head>
+        <body style="font-family: Arial; text-align: center; padding: 50px;">
+            <h1>🤖 HRM TEAMS SMS BOT</h1>
+            <p>Bot is running successfully!</p>
+            <p>📱 Telegram Bot: @HRM_TEAMS_BOT</p>
+            <p>✅ Status: Active</p>
+        </body>
+        </html>
+        """)
+    
+    def do_POST(self):
+        self.send_response(200)
+        self.end_headers()
+    
+    def log_message(self, format, *args):
+        pass  # লগ বন্ধ রাখুন
 
-@flask_app.route('/')
-def home():
-    return jsonify({
-        "status": "running",
-        "bot": "HRM TEAMS SMS BOT",
-        "message": "Bot is active and working!"
-    })
-
-@flask_app.route('/health')
-def health():
-    return jsonify({"status": "healthy", "timestamp": datetime.now().isoformat()})
-
-def run_flask():
-    """ফ্লাস্ক সার্ভার আলাদা থ্রেডে চালান"""
-    flask_app.run(host='0.0.0.0', port=8080, debug=False, use_reloader=False)
+def start_dummy_server():
+    """ডামি HTTP সার্ভার চালান (Render এর জন্য)"""
+    try:
+        server = HTTPServer(('0.0.0.0', 8080), DummyHandler)
+        server.serve_forever()
+    except Exception as e:
+        print(f"⚠️ Dummy server error: {e}")
 
 # ========== বট কনফিগারেশন ==========
 BOT_TOKEN = "8494156852:AAHTa5MiIm9wYE9SR0v_kRAGuPDjr9wHnkY"
@@ -49,7 +64,7 @@ OTP_CHAT_ID = "-1003147139412"
 
 DB_FILE = "hrm_sms.db"
 
-# ========== ডাটাবেস ==========
+# ========== ডাটাবেস ফাংশন ==========
 def get_db_connection():
     return sqlite3.connect(DB_FILE)
 
@@ -127,7 +142,6 @@ def add_numbers_from_excel(file_path: str) -> int:
             for cell in row:
                 if cell:
                     num = str(cell).strip()
-                    # শুধু ডিজিট এবং + রাখুন
                     num = re.sub(r'[^0-9+]', '', num)
                     if num and len(num) >= 8 and num not in numbers:
                         numbers.append(num)
@@ -139,12 +153,10 @@ def add_numbers_from_excel(file_path: str) -> int:
     cursor = conn.cursor()
     added = 0
     
-    # প্রথমে সব নম্বর দেখান
     print(f"📊 Found {len(numbers)} numbers in Excel file")
     
     for num in numbers:
         try:
-            # চেক করুন নম্বরটি আগে আছে কিনা
             cursor.execute('SELECT id FROM numbers WHERE number = ?', (num,))
             if cursor.fetchone():
                 print(f"⚠️ Number already exists: {num}")
@@ -159,7 +171,6 @@ def add_numbers_from_excel(file_path: str) -> int:
     
     conn.commit()
     
-    # যোগ করার পর মোট সংখ্যা দেখান
     total = cursor.execute('SELECT COUNT(*) FROM numbers').fetchone()[0]
     available = cursor.execute('SELECT COUNT(*) FROM numbers WHERE status = "available"').fetchone()[0]
     
@@ -185,7 +196,6 @@ def get_available_numbers_count() -> int:
     return count
 
 def get_all_available_numbers() -> List[Dict]:
-    """সব উপলব্ধ নম্বরের তালিকা পান"""
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT id, number FROM numbers WHERE status = "available" ORDER BY id')
@@ -194,7 +204,6 @@ def get_all_available_numbers() -> List[Dict]:
     return [{'id': row[0], 'number': row[1]} for row in rows]
 
 def get_available_number():
-    """একটি উপলব্ধ নম্বর পান (র্যান্ডম)"""
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT id, number FROM numbers WHERE status = "available" ORDER BY RANDOM() LIMIT 1')
@@ -203,7 +212,6 @@ def get_available_number():
     return {'id': row[0], 'number': row[1]} if row else None
 
 def get_different_available_number(current_number_id):
-    """বর্তমান নম্বর ছাড়া অন্য একটি উপলব্ধ নম্বর পান (র্যান্ডম)"""
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT id, number FROM numbers WHERE status = "available" AND id != ? ORDER BY RANDOM() LIMIT 1', 
@@ -299,22 +307,19 @@ def detect_otp_from_message(text: str) -> Optional[str]:
         r'otp[:\s]*(\d{4,8})',
         r'is[:\s]*(\d{4,8})',
         r'#(\d{6,8})',
-        r'WhatsApp\s+code\s+(\d{3})-(\d{3})',
-        r'Your\s+WhatsApp\s+code\s+(\d{3})-(\d{3})',
-        r'\b(\d{3})-(\d{3})\b',
+        r'Your verification code is: (\d{4,8})',
+        r'verification code:? (\d{4,8})',
     ]
     
     for pattern in patterns:
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
-            if match.groups() and len(match.groups()) == 2:
-                otp = match.group(1) + match.group(2)
-            elif match.groups():
+            if match.groups():
                 otp = match.group(1)
             else:
                 otp = match.group(0)
             
-            if otp and len(otp) >= 4 and otp not in ['2024', '2025', '2026', '2027', '2028', '2029', '2030']:
+            if otp and len(otp) >= 4 and len(otp) <= 8:
                 return otp
     
     return None
@@ -417,12 +422,10 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     print(f"🔘 Clicked: {data} by user {user_id}")
     
-    # ভেরিফিকেশন চেক
     is_member = await check_user_joined_groups(user_id, context)
     if is_member:
         verify_user(user_id)
     
-    # ========== ভেরিফিকেশন ==========
     if data == "verify":
         await query.edit_message_text(
             "🔓 <b>Verification Required</b>\n━━━━━━━━━━━━━━━━━\n\n"
@@ -457,7 +460,6 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
     
-    # ========== মেইন বাটন ==========
     if data == "get_number":
         number_data = get_available_number()
         if number_data:
@@ -505,15 +507,12 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         current_number = context.user_data.get('assigned_number', 'Unknown')
         print(f"   Current number: {current_number} (ID: {current_number_id})")
         
-        # বর্তমান নম্বর ছাড়া অন্য একটি নম্বর খুঁজুন
         new_number_data = get_different_available_number(current_number_id)
         
         if new_number_data:
-            # পুরনো নম্বর রিলিজ করুন
             release_number(current_number_id)
             print(f"   Released old number ID: {current_number_id}")
             
-            # নতুন নম্বর অ্যাসাইন করুন
             if assign_number(user_id, new_number_data['id'], new_number_data['number']):
                 context.user_data['assigned_number'] = new_number_data['number']
                 context.user_data['number_id'] = new_number_data['id']
@@ -569,7 +568,6 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
     
-    # ========== এডমিন ==========
     if user_id in ADMIN_IDS:
         if data == "admin_panel":
             stats = get_admin_stats()
@@ -656,7 +654,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     message = update.message
     
-    # এডমিন আপলোড
     if user_id in ADMIN_IDS and context.user_data.get('awaiting_upload'):
         if message.document:
             file = await message.document.get_file()
@@ -686,7 +683,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             return
     
-    # গ্রুপ জয়েন চেক
     if not await check_user_joined_groups(user_id, context):
         await message.reply_text(
             "⚠️ Please verify first!\nUse /start to verify.",
@@ -694,7 +690,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
     
-    # OTP ডিটেক্ট
     text = message.text or message.caption or ""
     otp = detect_otp_from_message(text)
     
@@ -712,7 +707,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ])
         )
         
-        # OTP চ্যানেলে পাঠান
         channel_msg = f"""🔑 <b>New OTP!</b>
 ━━━━━━━━━━━━━━━━━
 👤 User: {update.effective_user.first_name}
@@ -727,7 +721,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except:
             pass
         
-        # OTP পাওয়ার পর নম্বর রিলিজ করুন
         if 'number_id' in context.user_data:
             release_number(context.user_data['number_id'])
             del context.user_data['assigned_number']
@@ -747,12 +740,12 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ========== মেইন ==========
 def main():
-    # ফ্লাস্ক সার্ভার আলাদা থ্রেডে চালান (Render এর জন্য)
-    flask_thread = threading.Thread(target=run_flask, daemon=True)
-    flask_thread.start()
-    print("🌐 HTTP Server started on port 8080")
+    # ডামি HTTP সার্ভার চালান (Render Free Tier এর জন্য)
+    server_thread = threading.Thread(target=start_dummy_server, daemon=True)
+    server_thread.start()
+    print("🌐 Dummy HTTP Server started on port 8080 (for Render)")
     
-    # পুরনো ডাটাবেস ডিলিট করে নতুন তৈরি করুন
+    # ডাটাবেস চেক
     if os.path.exists(DB_FILE):
         os.remove(DB_FILE)
         print("🗑️ Old database deleted. Creating new one...")
@@ -765,15 +758,17 @@ def main():
     print("✅ Type /admin to open admin panel")
     print("✅ Upload Excel file to add numbers")
     print("✅ Numbers will be assigned randomly")
+    print("✅ Bot URL: https://your-render-url.onrender.com")
     print("=" * 50)
     
+    # টেলিগ্রাম বট চালান
     application = Application.builder().token(BOT_TOKEN).build()
-    
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("admin", admin_command))
     application.add_handler(CallbackQueryHandler(button_callback))
     application.add_handler(MessageHandler(filters.ALL, handle_message))
     
+    # Polling mode এ চালান (Webhook না)
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == "__main__":

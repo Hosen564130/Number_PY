@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-🤖 𝐇𝐑𝐌 𝐓𝐄𝐀𝐌𝐒 - 𝐒𝐌𝐒 𝐁𝐎𝐓 (Render Free Web Service এর জন্য)
+🤖 HRM TEAMS - SMS BOT (Render Free Web Service এর জন্য)
 গ্রুপ জয়েন চেক + নম্বর চেঞ্জ + OTP বট ও চ্যানেলে
 """
 
@@ -25,17 +25,19 @@ class DummyHandler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-type', 'text/html')
         self.end_headers()
-        self.wfile.write(b"""
+        # এমোজি বাদ দিয়ে plain text পাঠান
+        html_content = """
         <html>
         <head><title>HRM TEAMS SMS BOT</title></head>
         <body style="font-family: Arial; text-align: center; padding: 50px;">
-            <h1>🤖 HRM TEAMS SMS BOT</h1>
+            <h1>HRM TEAMS SMS BOT</h1>
             <p>Bot is running successfully!</p>
-            <p>📱 Telegram Bot: @HRM_TEAMS_BOT</p>
-            <p>✅ Status: Active</p>
+            <p>Telegram Bot is active</p>
+            <p>Status: Active</p>
         </body>
         </html>
-        """)
+        """
+        self.wfile.write(html_content.encode('utf-8'))
     
     def do_POST(self):
         self.send_response(200)
@@ -50,7 +52,7 @@ def start_dummy_server():
         server = HTTPServer(('0.0.0.0', 8080), DummyHandler)
         server.serve_forever()
     except Exception as e:
-        print(f"⚠️ Dummy server error: {e}")
+        print(f"Dummy server error: {e}")
 
 # ========== বট কনফিগারেশন ==========
 BOT_TOKEN = "8494156852:AAHTa5MiIm9wYE9SR0v_kRAGuPDjr9wHnkY"
@@ -115,7 +117,7 @@ def init_db():
     
     conn.commit()
     conn.close()
-    print("✅ Database initialized")
+    print("Database initialized")
 
 def add_user(user_id: int, username: str, first_name: str):
     conn = get_db_connection()
@@ -153,30 +155,30 @@ def add_numbers_from_excel(file_path: str) -> int:
     cursor = conn.cursor()
     added = 0
     
-    print(f"📊 Found {len(numbers)} numbers in Excel file")
+    print(f"Found {len(numbers)} numbers in Excel file")
     
     for num in numbers:
         try:
             cursor.execute('SELECT id FROM numbers WHERE number = ?', (num,))
             if cursor.fetchone():
-                print(f"⚠️ Number already exists: {num}")
+                print(f"Number already exists: {num}")
                 continue
             
             cursor.execute('INSERT INTO numbers (number, status, created_at) VALUES (?, ?, ?)',
                            (num, 'available', datetime.now().isoformat()))
             added += 1
-            print(f"✅ Added: {num}")
+            print(f"Added: {num}")
         except Exception as e:
-            print(f"❌ Failed to add {num}: {e}")
+            print(f"Failed to add {num}: {e}")
     
     conn.commit()
     
     total = cursor.execute('SELECT COUNT(*) FROM numbers').fetchone()[0]
     available = cursor.execute('SELECT COUNT(*) FROM numbers WHERE status = "available"').fetchone()[0]
     
-    print(f"📊 Total numbers in DB: {total}")
-    print(f"🟢 Available numbers: {available}")
-    print(f"✅ Successfully added: {added} new numbers")
+    print(f"Total numbers in DB: {total}")
+    print(f"Available numbers: {available}")
+    print(f"Successfully added: {added} new numbers")
     
     conn.close()
     return added
@@ -339,38 +341,38 @@ async def check_user_joined_groups(user_id: int, context: ContextTypes.DEFAULT_T
 # ========== কীবোর্ড ==========
 def get_main_keyboard() -> InlineKeyboardMarkup:
     keyboard = [
-        [InlineKeyboardButton("📱 Get a Phone Number", callback_data="get_number")],
-        [InlineKeyboardButton("📊 My Status", callback_data="my_status")],
-        [InlineKeyboardButton("🔄 Change Number", callback_data="change_number")],
-        [InlineKeyboardButton("ℹ️ Help", callback_data="help")]
+        [InlineKeyboardButton("Get a Phone Number", callback_data="get_number")],
+        [InlineKeyboardButton("My Status", callback_data="my_status")],
+        [InlineKeyboardButton("Change Number", callback_data="change_number")],
+        [InlineKeyboardButton("Help", callback_data="help")]
     ]
     return InlineKeyboardMarkup(keyboard)
 
 def get_verify_keyboard() -> InlineKeyboardMarkup:
     keyboard = [
-        [InlineKeyboardButton("📢 Main Channel", url=MAIN_CHANNEL_LINK)],
-        [InlineKeyboardButton("📢 OTP Channel", url=OTP_CHANNEL_LINK)],
-        [InlineKeyboardButton("✅ Check Verification", callback_data="check_verify")],
-        [InlineKeyboardButton("🔙 Back", callback_data="back_to_main")]
+        [InlineKeyboardButton("Main Channel", url=MAIN_CHANNEL_LINK)],
+        [InlineKeyboardButton("OTP Channel", url=OTP_CHANNEL_LINK)],
+        [InlineKeyboardButton("Check Verification", callback_data="check_verify")],
+        [InlineKeyboardButton("Back", callback_data="back_to_main")]
     ]
     return InlineKeyboardMarkup(keyboard)
 
 def get_admin_keyboard() -> InlineKeyboardMarkup:
     keyboard = [
-        [InlineKeyboardButton("📊 Stats", callback_data="admin_stats")],
-        [InlineKeyboardButton("📁 Upload Excel", callback_data="admin_upload")],
-        [InlineKeyboardButton("📋 Show All Numbers", callback_data="admin_show_numbers")],
-        [InlineKeyboardButton("👥 Users List", callback_data="admin_users")],
-        [InlineKeyboardButton("📈 OTP Logs", callback_data="admin_otp_logs")],
-        [InlineKeyboardButton("🔙 Back", callback_data="back_to_main")]
+        [InlineKeyboardButton("Stats", callback_data="admin_stats")],
+        [InlineKeyboardButton("Upload Excel", callback_data="admin_upload")],
+        [InlineKeyboardButton("Show All Numbers", callback_data="admin_show_numbers")],
+        [InlineKeyboardButton("Users List", callback_data="admin_users")],
+        [InlineKeyboardButton("OTP Logs", callback_data="admin_otp_logs")],
+        [InlineKeyboardButton("Back", callback_data="back_to_main")]
     ]
     return InlineKeyboardMarkup(keyboard)
 
 def get_number_action_keyboard() -> InlineKeyboardMarkup:
     keyboard = [
-        [InlineKeyboardButton("🔄 Change Number", callback_data="change_number")],
-        [InlineKeyboardButton("📊 My Status", callback_data="my_status")],
-        [InlineKeyboardButton("🔙 Back to Menu", callback_data="back_to_main")]
+        [InlineKeyboardButton("Change Number", callback_data="change_number")],
+        [InlineKeyboardButton("My Status", callback_data="my_status")],
+        [InlineKeyboardButton("Back to Menu", callback_data="back_to_main")]
     ]
     return InlineKeyboardMarkup(keyboard)
 
@@ -388,28 +390,28 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     total_numbers = get_total_numbers_count()
     available_numbers = get_available_numbers_count()
     
-    welcome_text = f"""🤖 <b>𝐇𝐑𝐌 𝐓𝐄𝐀𝐌𝐒</b>
-━━━━━━━━━━━━━━━━━
-<b>👤 User:</b> {user.first_name}
-<b>📊 Numbers Available:</b> {available_numbers}/{total_numbers}
+    welcome_text = f"""HRM TEAMS
+================================
+User: {user.first_name}
+Numbers Available: {available_numbers}/{total_numbers}
 
-<b>✨ Features:</b>
-• Temporary phone numbers
-• Instant OTP detection
-• 24/7 availability
+Features:
+- Temporary phone numbers
+- Instant OTP detection
+- 24/7 availability
 
-━━━━━━━━━━━━━━━━━"""
+================================"""
 
     if is_member:
-        welcome_text += "\n✅ <b>You are verified!</b>"
+        welcome_text += "\nYou are verified!"
         await update.message.reply_text(welcome_text, parse_mode='HTML', reply_markup=get_main_keyboard())
     else:
-        welcome_text += "\n⚠️ <b>Verification Required!</b>\nPlease verify to use the bot."
+        welcome_text += "\nVerification Required!\nPlease verify to use the bot."
         await update.message.reply_text(
             welcome_text,
             parse_mode='HTML',
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("🔓 Verify Now", callback_data="verify")]
+                [InlineKeyboardButton("Verify Now", callback_data="verify")]
             ])
         )
 
@@ -420,7 +422,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     data = query.data
     
-    print(f"🔘 Clicked: {data} by user {user_id}")
+    print(f"Clicked: {data} by user {user_id}")
     
     is_member = await check_user_joined_groups(user_id, context)
     if is_member:
@@ -428,7 +430,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if data == "verify":
         await query.edit_message_text(
-            "🔓 <b>Verification Required</b>\n━━━━━━━━━━━━━━━━━\n\n"
+            "Verification Required\n================================\n\n"
             "Join both channels using the buttons below, then click 'Check Verification'.\n\n"
             "After verification, you can start getting numbers!",
             parse_mode='HTML',
@@ -440,13 +442,13 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if await check_user_joined_groups(user_id, context):
             verify_user(user_id)
             await query.edit_message_text(
-                "✅ <b>Verification Successful!</b>\n\nYou can now use the bot!",
+                "Verification Successful!\n\nYou can now use the bot!",
                 parse_mode='HTML',
                 reply_markup=get_main_keyboard()
             )
         else:
             await query.edit_message_text(
-                "❌ <b>Verification Failed!</b>\n\nYou haven't joined both channels yet.",
+                "Verification Failed!\n\nYou haven't joined both channels yet.",
                 parse_mode='HTML',
                 reply_markup=get_verify_keyboard()
             )
@@ -454,7 +456,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if data == "back_to_main":
         await query.edit_message_text(
-            "🤖 <b>𝐇𝐑𝐌 𝐓𝐄𝐀𝐌𝐒</b>\n━━━━━━━━━━━━━━━━━\nWhat would you like to do?",
+            "HRM TEAMS\n================================\nWhat would you like to do?",
             parse_mode='HTML',
             reply_markup=get_main_keyboard()
         )
@@ -466,15 +468,15 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if assign_number(user_id, number_data['id'], number_data['number']):
                 context.user_data['assigned_number'] = number_data['number']
                 context.user_data['number_id'] = number_data['id']
-                print(f"📱 Assigned number: {number_data['number']} to user {user_id}")
+                print(f"Assigned number: {number_data['number']} to user {user_id}")
                 await query.edit_message_text(
-                    f"✅ <b>Number assigned!</b>\n━━━━━━━━━━━━━━━━━\n📞 <code>{number_data['number']}</code>\n\n⏳ Forward OTP message to this bot!",
+                    f"Number assigned!\n================================\nNumber: <code>{number_data['number']}</code>\n\nForward OTP message to this bot!",
                     parse_mode='HTML',
                     reply_markup=get_number_action_keyboard()
                 )
         else:
             await query.edit_message_text(
-                "❌ No numbers available!\n\nPlease contact admin to upload numbers.",
+                "No numbers available!\n\nPlease contact admin to upload numbers.",
                 parse_mode='HTML',
                 reply_markup=get_main_keyboard()
             )
@@ -483,21 +485,21 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data == "my_status":
         stats = get_user_stats(user_id)
         await query.edit_message_text(
-            f"📊 <b>Your Status</b>\n━━━━━━━━━━━━━━━━━\n"
-            f"📱 Total OTP: {stats['total_otp']}\n"
-            f"🔢 Total SMS: {stats['otp_count']}\n"
-            f"📞 Current Number: <code>{stats['current_number']}</code>",
+            f"Your Status\n================================\n"
+            f"Total OTP: {stats['total_otp']}\n"
+            f"Total SMS: {stats['otp_count']}\n"
+            f"Current Number: <code>{stats['current_number']}</code>",
             parse_mode='HTML',
             reply_markup=get_main_keyboard()
         )
         return
     
     if data == "change_number":
-        print(f"🔄 Change number requested for user {user_id}")
+        print(f"Change number requested for user {user_id}")
         
         if 'number_id' not in context.user_data:
             await query.edit_message_text(
-                "❌ You don't have any number assigned yet!\n\nClick 'Get a Phone Number' first.",
+                "You don't have any number assigned yet!\n\nClick 'Get a Phone Number' first.",
                 parse_mode='HTML',
                 reply_markup=get_main_keyboard()
             )
@@ -518,16 +520,16 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 context.user_data['number_id'] = new_number_data['id']
                 print(f"   Assigned new number: {new_number_data['number']}")
                 await query.edit_message_text(
-                    f"✅ <b>Number changed successfully!</b>\n━━━━━━━━━━━━━━━━━\n"
-                    f"📞 Old Number: <code>{current_number}</code>\n"
-                    f"📞 New Number: <code>{new_number_data['number']}</code>\n\n"
-                    f"⏳ Forward OTP message to this bot!",
+                    f"Number changed successfully!\n================================\n"
+                    f"Old Number: <code>{current_number}</code>\n"
+                    f"New Number: <code>{new_number_data['number']}</code>\n\n"
+                    f"Forward OTP message to this bot!",
                     parse_mode='HTML',
                     reply_markup=get_number_action_keyboard()
                 )
             else:
                 await query.edit_message_text(
-                    "❌ Failed to assign new number!",
+                    "Failed to assign new number!",
                     parse_mode='HTML',
                     reply_markup=get_main_keyboard()
                 )
@@ -535,10 +537,10 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             total = get_total_numbers_count()
             available = get_available_numbers_count()
             await query.edit_message_text(
-                f"❌ No other numbers available for change!\n\n"
-                f"📊 Total Numbers: {total}\n"
-                f"🟢 Available: {available}\n"
-                f"📱 Your Number: {current_number}\n\n"
+                f"No other numbers available for change!\n\n"
+                f"Total Numbers: {total}\n"
+                f"Available: {available}\n"
+                f"Your Number: {current_number}\n\n"
                 f"Please try again later or contact admin.",
                 parse_mode='HTML',
                 reply_markup=get_main_keyboard()
@@ -546,21 +548,21 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     
     if data == "help":
-        help_text = """ℹ️ <b>Help & Guide</b>
-━━━━━━━━━━━━━━━━━
+        help_text = """Help & Guide
+================================
 
-<b>How to use:</b>
-1️⃣ Click "Get a Phone Number"
-2️⃣ Use that number for OTP
-3️⃣ Forward the OTP message to this bot
-4️⃣ OTP will be detected automatically
+How to use:
+1- Click "Get a Phone Number"
+2- Use that number for OTP
+3- Forward the OTP message to this bot
+4- OTP will be detected automatically
 
-<b>Admin Commands:</b>
-• /admin - Open admin panel
-• Upload Excel file with numbers
+Admin Commands:
+- /admin - Open admin panel
+- Upload Excel file with numbers
 
-<b>Support:</b> @HRM_TEAMS
-━━━━━━━━━━━━━━━━━"""
+Support: @HRM_TEAMS
+================================"""
         await query.edit_message_text(
             help_text,
             parse_mode='HTML',
@@ -571,40 +573,40 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if user_id in ADMIN_IDS:
         if data == "admin_panel":
             stats = get_admin_stats()
-            panel_text = f"""🛡️ <b>Admin Panel</b>
-━━━━━━━━━━━━━━━━━
-👥 Users: {stats['total_users']}
-🟢 Available: {stats['available_numbers']}
-⚡ Assigned: {stats['assigned_numbers']}
-✅ Completed: {stats['completed_numbers']}
-📱 Total Numbers: {stats['total_numbers']}
-🔑 Total OTPs: {stats['total_otp']}
-━━━━━━━━━━━━━━━━━"""
+            panel_text = f"""Admin Panel
+================================
+Users: {stats['total_users']}
+Available: {stats['available_numbers']}
+Assigned: {stats['assigned_numbers']}
+Completed: {stats['completed_numbers']}
+Total Numbers: {stats['total_numbers']}
+Total OTPs: {stats['total_otp']}
+================================"""
             await query.edit_message_text(panel_text, parse_mode='HTML', reply_markup=get_admin_keyboard())
             return
         
         if data == "admin_stats":
             stats = get_admin_stats()
             await query.edit_message_text(
-                f"📊 <b>Statistics</b>\n━━━━━━━━━━━━━━━━━\n"
-                f"👥 Users: {stats['total_users']}\n"
-                f"🟢 Available: {stats['available_numbers']}\n"
-                f"⚡ Assigned: {stats['assigned_numbers']}\n"
-                f"✅ Completed: {stats['completed_numbers']}\n"
-                f"📱 Total Numbers: {stats['total_numbers']}\n"
-                f"🔑 Total OTPs: {stats['total_otp']}",
+                f"Statistics\n================================\n"
+                f"Users: {stats['total_users']}\n"
+                f"Available: {stats['available_numbers']}\n"
+                f"Assigned: {stats['assigned_numbers']}\n"
+                f"Completed: {stats['completed_numbers']}\n"
+                f"Total Numbers: {stats['total_numbers']}\n"
+                f"Total OTPs: {stats['total_otp']}",
                 parse_mode='HTML', reply_markup=get_admin_keyboard()
             )
             return
         
         if data == "admin_upload":
             await query.edit_message_text(
-                "📁 <b>Upload Excel File</b>\n━━━━━━━━━━━━━━━━━\n\n"
+                "Upload Excel File\n================================\n\n"
                 "Please send an Excel file (.xlsx) with phone numbers.\n\n"
-                "<b>Format:</b>\n• One number per cell\n• Any column\n• With or without country code\n\n"
+                "Format:\n- One number per cell\n- Any column\n- With or without country code\n\n"
                 "Example:\n+1234567890\n9876543210\n+44123456789",
                 parse_mode='HTML',
-                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_panel")]])
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Back", callback_data="admin_panel")]])
             )
             context.user_data['awaiting_upload'] = True
             return
@@ -612,7 +614,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if data == "admin_show_numbers":
             numbers = get_all_available_numbers()
             if numbers:
-                text = "📋 <b>Available Numbers</b>\n━━━━━━━━━━━━━━━━━\n"
+                text = "Available Numbers\n================================\n"
                 for i, num in enumerate(numbers[:30], 1):
                     text += f"{i}. <code>{num['number']}</code>\n"
                 if len(numbers) > 30:
@@ -628,7 +630,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             users = cursor.execute('SELECT first_name, total_otp FROM users ORDER BY total_otp DESC LIMIT 20').fetchall()
             conn.close()
             if users:
-                text = "👥 <b>Top Users</b>\n━━━━━━━━━━━━━━━━━\n"
+                text = "Top Users\n================================\n"
                 for i, (name, otp) in enumerate(users, 1):
                     text += f"{i}. {name[:15]} - {otp} OTPs\n"
             else:
@@ -642,9 +644,9 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logs = cursor.execute('SELECT otp, number, received_at FROM otp_logs ORDER BY received_at DESC LIMIT 20').fetchall()
             conn.close()
             if logs:
-                text = "📋 <b>Recent OTPs</b>\n━━━━━━━━━━━━━━━━━\n"
+                text = "Recent OTPs\n================================\n"
                 for otp, number, received_at in logs:
-                    text += f"🔑 {otp} | {number[-8:]}\n"
+                    text += f"OTP: {otp} | Number: {number[-8:]}\n"
             else:
                 text = "No OTP logs found."
             await query.edit_message_text(text, parse_mode='HTML', reply_markup=get_admin_keyboard())
@@ -667,10 +669,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             available = get_available_numbers_count()
             
             await message.reply_text(
-                f"✅ <b>Numbers uploaded successfully!</b>\n━━━━━━━━━━━━━━━━━\n"
-                f"📊 Added: {added} new numbers\n"
-                f"📞 Total Numbers: {total}\n"
-                f"🟢 Available: {available}\n\n"
+                f"Numbers uploaded successfully!\n================================\n"
+                f"Added: {added} new numbers\n"
+                f"Total Numbers: {total}\n"
+                f"Available: {available}\n\n"
                 f"Users can now get these numbers!",
                 parse_mode='HTML',
                 reply_markup=get_admin_keyboard()
@@ -678,14 +680,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
         else:
             await message.reply_text(
-                "❌ Please send an Excel file (.xlsx) with phone numbers.",
+                "Please send an Excel file (.xlsx) with phone numbers.",
                 parse_mode='HTML'
             )
             return
     
     if not await check_user_joined_groups(user_id, context):
         await message.reply_text(
-            "⚠️ Please verify first!\nUse /start to verify.",
+            "Please verify first!\nUse /start to verify.",
             parse_mode='HTML'
         )
         return
@@ -699,22 +701,22 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         save_otp(user_id, number, otp)
         
         await message.reply_text(
-            f"✅ <b>OTP Detected!</b>\n━━━━━━━━━━━━━━━━━\n🔑 <b>OTP:</b> <code>{otp}</code>\n📞 <b>Number:</b> <code>{number}</code>\n\nYou can now use this OTP!",
+            f"OTP Detected!\n================================\nOTP: <code>{otp}</code>\nNumber: <code>{number}</code>\n\nYou can now use this OTP!",
             parse_mode='HTML',
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("🔄 New Number", callback_data="get_number")],
-                [InlineKeyboardButton("📊 Status", callback_data="my_status")]
+                [InlineKeyboardButton("New Number", callback_data="get_number")],
+                [InlineKeyboardButton("Status", callback_data="my_status")]
             ])
         )
         
-        channel_msg = f"""🔑 <b>New OTP!</b>
-━━━━━━━━━━━━━━━━━
-👤 User: {update.effective_user.first_name}
-📞 Number: <code>{number}</code>
-🔑 OTP: <code>{otp}</code>
-⏰ Time: {datetime.now().strftime('%I:%M %p')}
-━━━━━━━━━━━━━━━━━
-🤖 <b>HRM TEAMS</b>"""
+        channel_msg = f"""New OTP!
+================================
+User: {update.effective_user.first_name}
+Number: <code>{number}</code>
+OTP: <code>{otp}</code>
+Time: {datetime.now().strftime('%I:%M %p')}
+================================
+HRM TEAMS"""
         
         try:
             await context.bot.send_message(chat_id=OTP_CHAT_ID, text=channel_msg, parse_mode='HTML')
@@ -728,37 +730,36 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         if not otp:
             await message.reply_text(
-                "❌ No OTP found.\n\nPlease forward the exact OTP message.",
+                "No OTP found.\n\nPlease forward the exact OTP message.",
                 parse_mode='HTML'
             )
 
 async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id in ADMIN_IDS:
-        await update.message.reply_text("🛡️ Admin Panel", parse_mode='HTML', reply_markup=get_admin_keyboard())
+        await update.message.reply_text("Admin Panel", parse_mode='HTML', reply_markup=get_admin_keyboard())
     else:
-        await update.message.reply_text("❌ Unauthorized!")
+        await update.message.reply_text("Unauthorized!")
 
 # ========== মেইন ==========
 def main():
     # ডামি HTTP সার্ভার চালান (Render Free Tier এর জন্য)
     server_thread = threading.Thread(target=start_dummy_server, daemon=True)
     server_thread.start()
-    print("🌐 Dummy HTTP Server started on port 8080 (for Render)")
+    print("Dummy HTTP Server started on port 8080 (for Render)")
     
     # ডাটাবেস চেক
     if os.path.exists(DB_FILE):
         os.remove(DB_FILE)
-        print("🗑️ Old database deleted. Creating new one...")
+        print("Old database deleted. Creating new one...")
     
     init_db()
     
     print("=" * 50)
-    print("🤖 HRM TEAMS Bot is running...")
-    print(f"👑 Admin ID: {ADMIN_IDS[0]}")
-    print("✅ Type /admin to open admin panel")
-    print("✅ Upload Excel file to add numbers")
-    print("✅ Numbers will be assigned randomly")
-    print("✅ Bot URL: https://your-render-url.onrender.com")
+    print("HRM TEAMS Bot is running...")
+    print(f"Admin ID: {ADMIN_IDS[0]}")
+    print("Type /admin to open admin panel")
+    print("Upload Excel file to add numbers")
+    print("Numbers will be assigned randomly")
     print("=" * 50)
     
     # টেলিগ্রাম বট চালান

@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
-"""
-🤖 HRM TEAMS - SMS BOT (Render Free Web Service এর জন্য)
-গ্রুপ জয়েন চেক + নম্বর চেঞ্জ + OTP বট ও চ্যানেলে
-"""
+# -*- coding: utf-8 -*-
+
+# ========== Python 3.14 কম্প্যাটিবিলিটি ফিক্স ==========
+import sys
+if sys.version_info >= (3, 12):
+    import imghdr
+    if not hasattr(imghdr, 'what'):
+        def what(filename, h=None):
+            return 'png'
+        imghdr.what = what
 
 import os
 import re
@@ -18,21 +24,18 @@ from telegram.ext import (
     filters, ContextTypes
 )
 
-# ========== Render এর জন্য ডামি HTTP সার্ভার (পোর্ট বাইন্ডিং এর জন্য) ==========
+# ========== Render এর জন্য ডামি HTTP সার্ভার ==========
 class DummyHandler(BaseHTTPRequestHandler):
-    """শুধু Render কে দেখানোর জন্য যে পোর্ট 8080 ওপেন আছে"""
     def do_GET(self):
         self.send_response(200)
         self.send_header('Content-type', 'text/html')
         self.end_headers()
-        # এমোজি বাদ দিয়ে plain text পাঠান
         html_content = """
         <html>
         <head><title>HRM TEAMS SMS BOT</title></head>
         <body style="font-family: Arial; text-align: center; padding: 50px;">
             <h1>HRM TEAMS SMS BOT</h1>
             <p>Bot is running successfully!</p>
-            <p>Telegram Bot is active</p>
             <p>Status: Active</p>
         </body>
         </html>
@@ -44,10 +47,9 @@ class DummyHandler(BaseHTTPRequestHandler):
         self.end_headers()
     
     def log_message(self, format, *args):
-        pass  # লগ বন্ধ রাখুন
+        pass
 
 def start_dummy_server():
-    """ডামি HTTP সার্ভার চালান (Render এর জন্য)"""
     try:
         server = HTTPServer(('0.0.0.0', 8080), DummyHandler)
         server.serve_forever()
@@ -58,7 +60,6 @@ def start_dummy_server():
 BOT_TOKEN = "8494156852:AAHTa5MiIm9wYE9SR0v_kRAGuPDjr9wHnkY"
 ADMIN_IDS = [7693730274]
 
-# গ্রুপ/চ্যানেল কনফিগারেশন
 MAIN_CHANNEL_LINK = "https://t.me/+RoAO90AJpXs5NDU1"
 OTP_CHANNEL_LINK = "https://t.me/+OAA82iQW08g3NjQ9"
 MAIN_CHAT_ID = "-1002923060029"
@@ -135,7 +136,6 @@ def update_user_number(user_id: int, number: str):
     conn.close()
 
 def add_numbers_from_excel(file_path: str) -> int:
-    """Excel ফাইল থেকে নম্বর যোগ করুন"""
     numbers = []
     try:
         wb = openpyxl.load_workbook(file_path)
@@ -172,14 +172,6 @@ def add_numbers_from_excel(file_path: str) -> int:
             print(f"Failed to add {num}: {e}")
     
     conn.commit()
-    
-    total = cursor.execute('SELECT COUNT(*) FROM numbers').fetchone()[0]
-    available = cursor.execute('SELECT COUNT(*) FROM numbers WHERE status = "available"').fetchone()[0]
-    
-    print(f"Total numbers in DB: {total}")
-    print(f"Available numbers: {available}")
-    print(f"Successfully added: {added} new numbers")
-    
     conn.close()
     return added
 
@@ -390,7 +382,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     total_numbers = get_total_numbers_count()
     available_numbers = get_available_numbers_count()
     
-    welcome_text = f"""HRM TEAMS
+    welcome_text = f"""HRM TEAMS SMS BOT
 ================================
 User: {user.first_name}
 Numbers Available: {available_numbers}/{total_numbers}
@@ -403,13 +395,12 @@ Features:
 ================================"""
 
     if is_member:
-        welcome_text += "\nYou are verified!"
-        await update.message.reply_text(welcome_text, parse_mode='HTML', reply_markup=get_main_keyboard())
+        welcome_text += "\n✅ You are verified!"
+        await update.message.reply_text(welcome_text, reply_markup=get_main_keyboard())
     else:
-        welcome_text += "\nVerification Required!\nPlease verify to use the bot."
+        welcome_text += "\n⚠️ Verification Required!\nPlease verify to use the bot."
         await update.message.reply_text(
             welcome_text,
-            parse_mode='HTML',
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("Verify Now", callback_data="verify")]
             ])
@@ -433,7 +424,6 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Verification Required\n================================\n\n"
             "Join both channels using the buttons below, then click 'Check Verification'.\n\n"
             "After verification, you can start getting numbers!",
-            parse_mode='HTML',
             reply_markup=get_verify_keyboard()
         )
         return
@@ -443,21 +433,18 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             verify_user(user_id)
             await query.edit_message_text(
                 "Verification Successful!\n\nYou can now use the bot!",
-                parse_mode='HTML',
                 reply_markup=get_main_keyboard()
             )
         else:
             await query.edit_message_text(
                 "Verification Failed!\n\nYou haven't joined both channels yet.",
-                parse_mode='HTML',
                 reply_markup=get_verify_keyboard()
             )
         return
     
     if data == "back_to_main":
         await query.edit_message_text(
-            "HRM TEAMS\n================================\nWhat would you like to do?",
-            parse_mode='HTML',
+            "HRM TEAMS SMS BOT\n================================\nWhat would you like to do?",
             reply_markup=get_main_keyboard()
         )
         return
@@ -477,7 +464,6 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await query.edit_message_text(
                 "No numbers available!\n\nPlease contact admin to upload numbers.",
-                parse_mode='HTML',
                 reply_markup=get_main_keyboard()
             )
         return
@@ -486,7 +472,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         stats = get_user_stats(user_id)
         await query.edit_message_text(
             f"Your Status\n================================\n"
-            f"Total OTP: {stats['total_otp']}\n"
+            f"Total OTP Received: {stats['total_otp']}\n"
             f"Total SMS: {stats['otp_count']}\n"
             f"Current Number: <code>{stats['current_number']}</code>",
             parse_mode='HTML',
@@ -500,25 +486,24 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if 'number_id' not in context.user_data:
             await query.edit_message_text(
                 "You don't have any number assigned yet!\n\nClick 'Get a Phone Number' first.",
-                parse_mode='HTML',
                 reply_markup=get_main_keyboard()
             )
             return
         
         current_number_id = context.user_data['number_id']
         current_number = context.user_data.get('assigned_number', 'Unknown')
-        print(f"   Current number: {current_number} (ID: {current_number_id})")
+        print(f"Current number: {current_number} (ID: {current_number_id})")
         
         new_number_data = get_different_available_number(current_number_id)
         
         if new_number_data:
             release_number(current_number_id)
-            print(f"   Released old number ID: {current_number_id}")
+            print(f"Released old number ID: {current_number_id}")
             
             if assign_number(user_id, new_number_data['id'], new_number_data['number']):
                 context.user_data['assigned_number'] = new_number_data['number']
                 context.user_data['number_id'] = new_number_data['id']
-                print(f"   Assigned new number: {new_number_data['number']}")
+                print(f"Assigned new number: {new_number_data['number']}")
                 await query.edit_message_text(
                     f"Number changed successfully!\n================================\n"
                     f"Old Number: <code>{current_number}</code>\n"
@@ -530,7 +515,6 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 await query.edit_message_text(
                     "Failed to assign new number!",
-                    parse_mode='HTML',
                     reply_markup=get_main_keyboard()
                 )
         else:
@@ -542,7 +526,6 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"Available: {available}\n"
                 f"Your Number: {current_number}\n\n"
                 f"Please try again later or contact admin.",
-                parse_mode='HTML',
                 reply_markup=get_main_keyboard()
             )
         return
@@ -552,7 +535,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 ================================
 
 How to use:
-1- Click "Get a Phone Number"
+1- Click 'Get a Phone Number'
 2- Use that number for OTP
 3- Forward the OTP message to this bot
 4- OTP will be detected automatically
@@ -565,7 +548,6 @@ Support: @HRM_TEAMS
 ================================"""
         await query.edit_message_text(
             help_text,
-            parse_mode='HTML',
             reply_markup=get_main_keyboard()
         )
         return
@@ -576,13 +558,13 @@ Support: @HRM_TEAMS
             panel_text = f"""Admin Panel
 ================================
 Users: {stats['total_users']}
-Available: {stats['available_numbers']}
-Assigned: {stats['assigned_numbers']}
-Completed: {stats['completed_numbers']}
+Available Numbers: {stats['available_numbers']}
+Assigned Numbers: {stats['assigned_numbers']}
+Completed Numbers: {stats['completed_numbers']}
 Total Numbers: {stats['total_numbers']}
 Total OTPs: {stats['total_otp']}
 ================================"""
-            await query.edit_message_text(panel_text, parse_mode='HTML', reply_markup=get_admin_keyboard())
+            await query.edit_message_text(panel_text, reply_markup=get_admin_keyboard())
             return
         
         if data == "admin_stats":
@@ -595,7 +577,7 @@ Total OTPs: {stats['total_otp']}
                 f"Completed: {stats['completed_numbers']}\n"
                 f"Total Numbers: {stats['total_numbers']}\n"
                 f"Total OTPs: {stats['total_otp']}",
-                parse_mode='HTML', reply_markup=get_admin_keyboard()
+                reply_markup=get_admin_keyboard()
             )
             return
         
@@ -605,7 +587,6 @@ Total OTPs: {stats['total_otp']}
                 "Please send an Excel file (.xlsx) with phone numbers.\n\n"
                 "Format:\n- One number per cell\n- Any column\n- With or without country code\n\n"
                 "Example:\n+1234567890\n9876543210\n+44123456789",
-                parse_mode='HTML',
                 reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Back", callback_data="admin_panel")]])
             )
             context.user_data['awaiting_upload'] = True
@@ -635,7 +616,7 @@ Total OTPs: {stats['total_otp']}
                     text += f"{i}. {name[:15]} - {otp} OTPs\n"
             else:
                 text = "No users found."
-            await query.edit_message_text(text, parse_mode='HTML', reply_markup=get_admin_keyboard())
+            await query.edit_message_text(text, reply_markup=get_admin_keyboard())
             return
         
         if data == "admin_otp_logs":
@@ -649,7 +630,7 @@ Total OTPs: {stats['total_otp']}
                     text += f"OTP: {otp} | Number: {number[-8:]}\n"
             else:
                 text = "No OTP logs found."
-            await query.edit_message_text(text, parse_mode='HTML', reply_markup=get_admin_keyboard())
+            await query.edit_message_text(text, reply_markup=get_admin_keyboard())
             return
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -674,21 +655,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"Total Numbers: {total}\n"
                 f"Available: {available}\n\n"
                 f"Users can now get these numbers!",
-                parse_mode='HTML',
                 reply_markup=get_admin_keyboard()
             )
             return
         else:
             await message.reply_text(
-                "Please send an Excel file (.xlsx) with phone numbers.",
-                parse_mode='HTML'
+                "Please send an Excel file (.xlsx) with phone numbers."
             )
             return
     
     if not await check_user_joined_groups(user_id, context):
         await message.reply_text(
-            "Please verify first!\nUse /start to verify.",
-            parse_mode='HTML'
+            "Please verify first!\nUse /start to verify."
         )
         return
     
@@ -730,13 +708,12 @@ HRM TEAMS"""
     else:
         if not otp:
             await message.reply_text(
-                "No OTP found.\n\nPlease forward the exact OTP message.",
-                parse_mode='HTML'
+                "No OTP found.\n\nPlease forward the exact OTP message."
             )
 
 async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id in ADMIN_IDS:
-        await update.message.reply_text("Admin Panel", parse_mode='HTML', reply_markup=get_admin_keyboard())
+        await update.message.reply_text("Admin Panel", reply_markup=get_admin_keyboard())
     else:
         await update.message.reply_text("Unauthorized!")
 
@@ -769,7 +746,6 @@ def main():
     application.add_handler(CallbackQueryHandler(button_callback))
     application.add_handler(MessageHandler(filters.ALL, handle_message))
     
-    # Polling mode এ চালান (Webhook না)
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == "__main__":
